@@ -1,0 +1,28 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore log files
+*.log
+
+# Ignore build directories
+dist/
+build/
+
+# Ignore environment variables file
+.env
+
+# Ignore OS generated files
+.DS_Store
+
+# Ignore IDE specific files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore coverage directory
+coverage/
+
+# Ignore temporary files
+*.tmp
+*.swp
