@@ -8,10 +8,8 @@ import { Telegraf } from "telegraf";
 import { middleware } from "./middleware";
 
 config();
-const setupWebhook = async (url: string, hash: string) => {
-  app.use(await bot.createWebhook({ domain: `${url}/${hash}` }));
-};
 
+// Получаем URL и ключи
 const url = process.env.WEBHOOK_DOMAIN;
 
 if (!url) {
@@ -19,20 +17,26 @@ if (!url) {
   console.log("Specify the URL with the BOT_URL environment variable");
   process.exit();
 }
+
+// Создаем экземпляр бота
 const bot = new Telegraf(process.env.BOT_TOKEN ?? "");
 bot.use(middleware);
 
+// Настройка хеширования для webhook
 const hash = crypto
   .createHash("sha256")
-  .update(process.env.BOT_TOKEN || "")
+  .update(process.env.BOT_TOKEN ?? "")
   .digest("base64");
+
+const setupWebhook = async (url: string, hash: string) => {
+  app.use(await bot.createWebhook({ domain: `${url}/${hash}` }));
+};
 
 export const app = express();
 app.use(bodyParser.json());
-app.use(cors()); // разрешить любым фронтам делать запросы на наш бэк
+app.use(cors()); // Разрешаем любым фронтам делать запросы на наш бэк
 setupWebhook(url, hash);
 app.use(bot.webhookCallback(`/${url}`));
-
 app.get("/", (req, res) => {
   res.status(200).json({ version: "1.0" });
 });
