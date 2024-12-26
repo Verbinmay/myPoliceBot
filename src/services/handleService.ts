@@ -70,6 +70,8 @@ export const handleService = {
           0
         );
 
+      console.log(hashtags, "hashtags");
+
       const text = hashtags
         ? alphabetSortingHashtagsViewer(hashtags)
         : "No hashtags found";
@@ -85,6 +87,7 @@ export const handleService = {
           message_ids: messages.map((message) => message.id),
         });
       }
+      console.log("end");
       return true;
     } catch (e) {
       console.log(e);
