@@ -96,7 +96,6 @@ export const clientTGRepository = {
   },
   async promoteToAdmin(chatId: number, userId: number, customTitle: string) {
     try {
-      // Права для администратора
       const rights: Td.chatAdministratorRights = {
         _: "chatAdministratorRights",
         can_manage_chat: false,
@@ -116,7 +115,6 @@ export const clientTGRepository = {
         is_anonymous: false,
       };
 
-      // Статус администратора с правами
       const status: Td.chatMemberStatusAdministrator = {
         _: "chatMemberStatusAdministrator",
         custom_title: customTitle,
@@ -124,7 +122,6 @@ export const clientTGRepository = {
         rights: rights,
       };
 
-      // Устанавливаем статус для пользователя
       await clientTG.invoke({
         _: "setChatMemberStatus",
         chat_id: chatId,
@@ -164,7 +161,6 @@ export const clientTGRepository = {
         member_until_date: 0,
       };
 
-      // Устанавливаем статус для пользователя
       await clientTG.invoke({
         _: "setChatMemberStatus",
         chat_id: chatId,
@@ -207,7 +203,6 @@ export const clientTGRepository = {
         },
       };
 
-      // Устанавливаем статус для пользователя
       await clientTG.invoke({
         _: "setChatMemberStatus",
         chat_id: chatId,
@@ -249,7 +244,6 @@ export const clientTGRepository = {
         },
       };
 
-      // Устанавливаем статус для пользователя
       await clientTG.invoke({
         _: "setChatMemberStatus",
         chat_id: chatId,

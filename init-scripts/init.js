@@ -1,10 +1,9 @@
-db = db.getSiblingDB("policeBot"); // Создаем или выбираем базу данных
+db = db.getSiblingDB("policeBot"); 
 
-// Создание пользователя
 db.createUser({
   user: "mark",
   pwd: "ff",
   roles: [
-    { role: "readWrite", db: "policeBot" }, // Даем пользователю права на базу данных "policeBot"
+    { role: "readWrite", db: "policeBot" }, 
   ],
 });

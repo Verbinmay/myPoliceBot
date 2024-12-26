@@ -14,7 +14,6 @@ import { clientTGService } from "./services/clientTGService";
 
 config();
 
-// Получаем URL и ключи
 const url = process.env.WEBHOOK_DOMAIN;
 
 if (!url) {
@@ -24,7 +23,7 @@ if (!url) {
 }
 
 tdl.configure({ tdjson: getTdjson() });
-// Создаем экземпляр бота
+
 export const bot = new Telegraf(process.env.BOT_TOKEN ?? "");
 bot.use(middlewareBot);
 
@@ -42,7 +41,6 @@ const setClientTg = async () => {
   await clientTG.login();
 };
 
-// Настройка хеширования для webhook
 const hash = crypto
   .createHash("sha256")
   .update(process.env.BOT_TOKEN ?? "")
