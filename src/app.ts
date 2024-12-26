@@ -3,9 +3,14 @@ import cors from "cors";
 import crypto from "crypto";
 import { config } from "dotenv";
 import express from "express";
+import cron from "node-cron";
+import { getTdjson } from "prebuilt-tdlib";
+import * as tdl from "tdl";
 import { Telegraf } from "telegraf";
 
-import { middleware } from "./middleware";
+import { middlewareBot } from "./middlewares/middlewareEventBot";
+import { handleUpdate } from "./middlewares/middlewareEventClient";
+import { clientTGService } from "./services/clientTGService";
 
 config();
 
@@ -18,9 +23,24 @@ if (!url) {
   process.exit();
 }
 
+tdl.configure({ tdjson: getTdjson() });
 // Создаем экземпляр бота
-const bot = new Telegraf(process.env.BOT_TOKEN ?? "");
-bot.use(middleware);
+export const bot = new Telegraf(process.env.BOT_TOKEN ?? "");
+bot.use(middlewareBot);
+
+export const clientTG = tdl.createClient({
+  apiId: Number(process.env.api_id ?? 222),
+  apiHash: process.env.api_hash ?? "",
+});
+
+clientTG.on("error", console.error);
+clientTG.on("update", async (update) => {
+  await handleUpdate(update);
+});
+
+const setClientTg = async () => {
+  await clientTG.login();
+};
 
 // Настройка хеширования для webhook
 const hash = crypto
@@ -36,7 +56,11 @@ export const app = express();
 app.use(bodyParser.json());
 app.use(cors()); // Разрешаем любым фронтам делать запросы на наш бэк
 setupWebhook(url, hash);
+setClientTg();
 app.use(bot.webhookCallback(`/${url}`));
 app.get("/", (req, res) => {
   res.status(200).json({ version: "1.0" });
+});
+cron.schedule("0 3 * * *", async () => {
+  await clientTGService.updateChatsMessages();
 });

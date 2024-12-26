@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mark
+      MONGO_INITDB_ROOT_PASSWORD: ff
+      MONGO_INITDB_DATABASE: policeBot # Указываем начальную базу данных
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-scripts:/docker-entrypoint-initdb.d # Монтируем папку с кастомными скриптами
+
+volumes:
+  mongodb_data:
