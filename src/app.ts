@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { config } from "dotenv";
 import express from "express";
 import cron from "node-cron";
+import OpenAI from "openai";
 import { getTdjson } from "prebuilt-tdlib";
 import * as tdl from "tdl";
 import { Telegraf } from "telegraf";
@@ -40,6 +41,16 @@ clientTG.on("update", async (update) => {
 const setClientTg = async () => {
   await clientTG.login();
 };
+
+export const openai = new OpenAI({
+  baseURL: "https://api.deepseek.com",
+  apiKey: process.env.DEEP_TOKEN,
+  maxRetries: 4,
+});
+// export const openai = new OpenAI({
+//   apiKey: process.env.GPT_TOKEN,
+//   maxRetries: 4,
+// });
 
 const hash = crypto
   .createHash("sha256")

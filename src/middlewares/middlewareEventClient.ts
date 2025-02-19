@@ -2,6 +2,11 @@ import type * as Td from "tdlib-types";
 
 import { handleService } from "../services/handleService";
 
+function shouldBotRespond() {
+  const responseProbability = 0.005; // Вероятность ответа (например, 0.5% или 1 из 200)
+  return Math.random() < responseProbability;
+}
+
 export const handleUpdate = async (update: Td.Update) => {
   try {
     if (update._ === "updateNewMessage") {
@@ -15,7 +20,18 @@ export const handleUpdate = async (update: Td.Update) => {
 
 async function handleMessage(update: Td.updateNewMessage) {
   try {
-    const message = update.message;
+    const message: Td.message = update.message;
+    console.log(message);
+
+    if (message.sender_id._ === "messageSenderChat") {
+      return;
+    }
+
+    // if (message.sender_id.user_id === message.chat_id) {
+    //   await handleMyDialogs(message);
+    //   return;
+    // }
+
     if (message.content._ === "messageText") {
       await handleTextMessage(message);
       return;
@@ -32,6 +48,14 @@ async function handleMessage(update: Td.updateNewMessage) {
     console.log(e);
   }
 }
+
+// async function handleMyDialogs(message: Td.message) {
+//   try {
+//     const isAnswered = await handleService.handleMyDialogs(message);
+//   } catch (e) {
+//     console.log(e);
+//   }
+// }
 
 async function handleTextMessage(message: Td.message) {
   try {
@@ -55,7 +79,10 @@ async function handleTextMessage(message: Td.message) {
       case "/help":
         await handleService.handleHelpCommand(message);
         break;
-        
+
+      case "/mes":
+        await handleService.handleMyDialogs(message);
+        break;
 
       default:
         if (text.includes("/setAdmin")) {
@@ -66,12 +93,24 @@ async function handleTextMessage(message: Td.message) {
           await handleService.handleMuteCommand(message);
           break;
         }
-        if(text.includes('/delete')){
+        if (text.includes("/delete")) {
           await handleService.handleDeleteCommand(message);
           break;
         }
 
+        if (text.toLowerCase() === "да" && Math.random() > 0.5) {
+          await handleService.handleYesCommand(message);
+          break;
+        }
+        if (text.toLowerCase() === "нет" && Math.random() > 0.5) {
+          await handleService.handleNoCommand(message);
+          break;
+        }
 
+        if (shouldBotRespond()) {
+          await handleService.handleMyDialogs(message);
+          break;
+        }
         break;
     }
   } catch (e) {

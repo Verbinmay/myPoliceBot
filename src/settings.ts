@@ -15,6 +15,7 @@ export const SETTINGS = {
     "maku_du",
     "revan_may",
   ],
+  MY_API_ID: process.env.API_MY_ID ? Number(process.env.API_MY_ID) : 0,
 };
 
 export const ERRORMESSAGES = {};

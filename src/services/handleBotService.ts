@@ -6,21 +6,9 @@ import { addToCache } from "../helpers/addToCache";
 import { deleteMessageBot } from "../helpers/deleteMessageBot";
 import { getHashtagsFromString } from "../helpers/getHashtagsFromString";
 import { SETTINGS } from "../settings";
-import { getUserId } from "../telegraf/helpers/get-user-id";
-import { getUserUsername } from "../telegraf/helpers/get-user-username";
 
 const recentChecks = new Set<number>();
 const messageSenders = new Set<number>();
-
-function checkAdminOrModerators(ctx: Context): boolean {
-  const userId = getUserId(ctx);
-  const userName = getUserUsername(ctx) ?? "";
-
-  return (
-    SETTINGS.ADMIN_ID.includes(userId) ||
-    SETTINGS.MODERATORS_USERNAME.includes(userName)
-  );
-}
 
 export const handleBotService = {
   async handleHashtagsChecker(ctx: Context) {

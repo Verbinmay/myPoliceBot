@@ -1,5 +1,7 @@
+import { config } from "dotenv";
 import type * as Td from "tdlib-types";
 
+import { openai } from "../app";
 import { AdminDB, AdminsDBModel } from "../db/types/admins.db.entity";
 import { HashtagDBModel } from "../db/types/hashtag.db.entity";
 import { alphabetSortingHashtagsViewer } from "../helpers/alphabetSortingHashtagsViewer";
@@ -10,6 +12,8 @@ import { SETTINGS } from "../settings";
 import { AdminsService } from "./adminsService";
 import { clientTGService } from "./clientTGService";
 import { messageHashService } from "./messageHashService";
+
+config();
 
 async function checkAdmin(
   info: Td.MessageSender,
@@ -30,6 +34,7 @@ async function checkAdmin(
     return false;
   }
 }
+
 async function getUserIdFromMessage(
   chat_id: number,
   message: Td.message
@@ -94,7 +99,6 @@ export const handleService = {
       return false;
     }
   },
-
   async handleUpdateHashtagsCommand(message: Td.message) {
     try {
       const chat_id: number = message.chat_id;
@@ -107,7 +111,6 @@ export const handleService = {
       return false;
     }
   },
-
   async handleHashtagsFromNewMessage(message: Td.message) {
     try {
       const allTreadsHashtags: HashtagDBModel[] =
@@ -351,22 +354,147 @@ export const handleService = {
     try {
       const chat_id: number = message.chat_id;
       const text = `
-/help - список команд
+!help - список команд
 Admin commands:
-/get - получить все хештеги из чата (нет)
-/updateHashtags - обновить сообщение со всеми хештегами в чатах (да)
-/delete <#хештег> - удалить хештег из списка хештегов(да)
-/setAdmin <кличка> - назначить администратора без прав, reply на сообщение кандидата (да)
-/unsetAdmin - снять администратора без прав,eply на сообщение кандидата (да)
-/mute <время> - замутить пользователя на время <минуты>, reply на сообщение кандидата (да)
-/unmute - размутить пользователя, reply на сообщение кандидата (да)
-/getAdmins - получить всех администраторов чата(нет)
+!get - получить все хештеги из чата (нет)
+!updateHashtags - обновить сообщение со всеми хештегами в чатах (да)
+!delete <#хештег> - удалить хештег из списка хештегов(да)
+!setAdmin <кличка> - назначить администратора без прав, reply на сообщение кандидата (да)
+!unsetAdmin - снять администратора без прав,eply на сообщение кандидата (да)
+!mute <время> - замутить пользователя на время <минуты>, reply на сообщение кандидата (да)
+!unmute - размутить пользователя, reply на сообщение кандидата (да)
+!getAdmins - получить всех администраторов чата(нет)
 }`;
       await clientTGRepository.sendMessage(
         chat_id,
         text,
         message.message_thread_id
       );
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+  async handleMyDialogs(message: Td.message) {
+    try {
+      let messages: Td.message[] | MessageTdWithUserName | null =
+        await clientTGService.getHistoryOnly3Messages(
+          message.chat_id,
+          0,
+          [],
+          [],
+          message.message_thread_id ?? 0
+        );
+      if (!messages) return false;
+      type MessageTdWithUserName = Td.Message & {
+        user_name: string;
+      };
+      for (const message of messages) {
+        const user_id = (message.sender_id as Td.messageSenderUser).user_id;
+        const user = await clientTGRepository.getUser(user_id);
+        (message as MessageTdWithUserName).user_name = user?.first_name ?? "";
+      }
+      function viewModelMessage(mes: MessageTdWithUserName) {
+        let mess = "";
+        if (
+          (mes.sender_id as Td.messageSenderUser).user_id === SETTINGS.MY_API_ID
+        ) {
+          mess += "Я: ";
+        } else {
+          mess += `${mes.user_name}: `;
+        }
+        mess += (mes.content as Td.messageText).text.text;
+        return mess;
+      }
+      const stringMessages =
+        messages?.map((m) => viewModelMessage(m as MessageTdWithUserName)) ??
+        [];
+      const systemPrompt = `Проанализируй весь диалог, учитывая, что слова перед двоеточием — это ники пользователей, а текст после двоеточия — их сообщения. Шути как подросток, стеби, без объяснений, на основе контекста разговора, от лица стороннего участника, который не писал последние сообщения. В ответе указывай только текст шутки без имён пользователей `;
+      const userDialog = stringMessages;
+      console.log(systemPrompt, "systemPrompt");
+      let response;
+      let notEnd = true;
+      let quantity = 0;
+      while (notEnd && quantity < 5) {
+        try {
+          quantity++;
+          response = await openai.chat.completions.create({
+            model: "deepseek-chat",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              {
+                role: "user",
+                content: userDialog.join("\n"),
+              },
+            ],
+            temperature: 0.9,
+            max_tokens: 1000,
+          });
+          // response = await openai.chat.completions.create({
+          //   model: "gpt-4",
+          //   messages: [
+          //     {
+          //       role: "system",
+          //       content:
+          //         "Ники пользователей стоят перед двоеточием, после двоеточия — их сообщения. Шути как подросток, без объяснений, на основе контекста разговора, от лица стороннего участника, который не писал последние сообщения. В ответе указывай только текст шутки без имён пользователей.",
+          //     },
+          //     {
+          //       role: "user",
+          //       content: userDialog.join("\n"),
+          //     },
+          //   ],
+          //   temperature: 0.9,
+          //   max_tokens: 1000,
+          // });
+          notEnd = false;
+        } catch (error) {
+          console.error("API Error Details:", error);
+        }
+      }
+      if (!response) return false;
+      // const reasoning_content = response.choices[0].message;
+      // console.log(reasoning_content, "reasoning_content");
+      const content = response.choices[0].message.content ?? "думаю";
+
+      await clientTGRepository.sendMessage(
+        message.chat_id,
+        content.replace(/"/g, ""),
+        message.message_thread_id
+      );
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+  async handleYesCommand(message: Td.message) {
+    try {
+      const chat_id: number = message.chat_id;
+
+      const message_thread_id: number = message.message_thread_id;
+      await clientTGRepository.sendMessage(chat_id, "пизда", message_thread_id);
+
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
+  },
+  async handleNoCommand(message: Td.message) {
+    try {
+      const chat_id: number = message.chat_id;
+
+      const message_thread_id: number = message.message_thread_id;
+      await clientTGRepository.sendMessage(
+        chat_id,
+        "пидора ответ",
+        message_thread_id
+      );
+
       return true;
     } catch (e) {
       console.log(e);

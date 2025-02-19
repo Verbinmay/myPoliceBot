@@ -46,6 +46,73 @@ export const clientTGService = {
       return null;
     }
   },
+  async getHistoryOnly3Messages(
+    chat_id: number,
+    nextFromMessageId: number,
+    messages: Array<Td.message>,
+    thread_ids: number[] = [],
+    thread_id: number = 0
+  ): Promise<Array<Td.message> | null> {
+    try {
+      let updated_thread_ids = thread_ids;
+      if (updated_thread_ids.length === 0) {
+        const treads: Td.forumTopics | null =
+          await clientTGRepository.getForumTopics(chat_id);
+        if (treads !== null) {
+          updated_thread_ids = treads.topics.map(
+            (thread) => thread.info.message_thread_id
+          );
+        }
+      }
+      const response: GetChatMessagesResponse =
+        await clientTGRepository.getChatMessages(chat_id, nextFromMessageId);
+
+      if (response.hasError) {
+        console.log("Ошибка при получении истории чата");
+        return null;
+      }
+
+      response.messages = response.messages.filter((msg) => {
+        return (
+          msg.content?._ === "messageText" &&
+          typeof msg.content.text.text === "string" &&
+          msg.content.text.text.length < 500
+        );
+      });
+
+      if (thread_id !== 0 && updated_thread_ids.includes(thread_id)) {
+        response.messages = response.messages.filter((msg) => {
+          return msg.message_thread_id === thread_id;
+        });
+      } else {
+        response.messages = response.messages.filter((msg) => {
+          return !updated_thread_ids.includes(msg.message_thread_id);
+        });
+      }
+      let updated_messages = messages.concat(response.messages);
+
+      if (response.hasNext && updated_messages.length < 3) {
+        return this.getHistoryOnly3Messages(
+          chat_id,
+          response.nextFromMessageId,
+          updated_messages,
+          updated_thread_ids,
+          thread_id
+        );
+      }
+
+      const oneDayAgo = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+      updated_messages = updated_messages.filter((msg) => msg.date > oneDayAgo);
+      if (!updated_messages.length) return null;
+
+      updated_messages = updated_messages.sort((a, b) => a.date - b.date);
+
+      return updated_messages.slice(0, 3);
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+  },
 
   async getHashtagsFromMessagesAndSave(
     chat_id: number,
@@ -121,6 +188,15 @@ export const clientTGService = {
     } catch (e) {
       console.log(e);
       return false;
+    }
+  },
+  async getForumTopics(chat_id: number) {
+    try {
+      const a = await clientTGRepository.getForumTopics(chat_id);
+      return a;
+    } catch (e) {
+      console.log(e);
+      return null;
     }
   },
 };

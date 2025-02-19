@@ -275,6 +275,23 @@ export const clientTGRepository = {
     }
   },
 
+  async getForumTopics(chatId: number) {
+    try {
+      const response: Td.forumTopics = await clientTG.invoke({
+        _: "getForumTopics",
+        chat_id: chatId,
+        offset_date: 0,
+        offset_message_id: 0,
+        limit: 100,
+      });
+
+      return response;
+    } catch (error) {
+      console.error("Ошибка при получении тем форума:", error);
+      return null;
+    }
+  },
+
   async getUser(userId: number): Promise<Td.user | null> {
     try {
       const userFullInfo: Td.user = await clientTG.invoke({
