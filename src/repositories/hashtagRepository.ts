@@ -25,6 +25,15 @@ export const hashtagRepository = {
     }
   },
 
+  async getTheadIdsHashtags(): Promise<number[]> {
+    try {
+      return await hashtagsCollection.distinct("message_thread_id");
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  },
+
   async createHashtags(dto: CreateHashtagsParams) {
     try {
       const insertResult: InsertOneResult<HashtagDBModel> =

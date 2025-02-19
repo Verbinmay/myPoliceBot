@@ -26,12 +26,20 @@ export const clientTGService = {
         return null;
       }
 
-      let allHashtagsInDb: string[] | null =
-        await this.getHashtagsFromMessagesAndSave(
+      const thread_ids: number[] =
+        await hashtagRepository.getTheadIdsHashtags();
+      let allHashtagsInDb: string[] | null = [];
+
+      for (const id of thread_ids) {
+        const result = await this.getHashtagsFromMessagesAndSave(
           chat_id,
-          message_thread_id,
+          id,
           response.messages
         );
+        if (id === message_thread_id) {
+          allHashtagsInDb = result;
+        }
+      }
 
       if (response.hasNext) {
         return await this.getHistoryAndUpdateHashtags(
