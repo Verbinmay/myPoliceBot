@@ -80,9 +80,9 @@ async function handleTextMessage(message: Td.message) {
         await handleService.handleHelpCommand(message);
         break;
 
-      case "/mes":
-        await handleService.handleMyDialogs(message);
-        break;
+      // case "/mes":
+      //   await handleService.handleMyDialogs(message);
+      //   break;
 
       default:
         if (text.includes("/setAdmin")) {
