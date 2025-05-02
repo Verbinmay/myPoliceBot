@@ -23,10 +23,6 @@ async function handleMessage(update: Td.updateNewMessage) {
     const message: Td.message = update.message;
     console.log(message);
 
-    if (message.sender_id._ === "messageSenderChat") {
-      return;
-    }
-
     // if (message.sender_id.user_id === message.chat_id) {
     //   await handleMyDialogs(message);
     //   return;
